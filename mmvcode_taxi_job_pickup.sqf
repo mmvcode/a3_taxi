@@ -25,6 +25,16 @@ _customer setVehicleVarName _name;
 doStop _customer;
 _customer setPos _position;
 
+// Event Handler 
+_customer addEventHandler ["Init", {
+	waitUntil {
+		if(_customer distance player < 2) then {
+			_veh  = vehicle player;
+			this moveInAny _veh;
+		} 
+	}
+}];
+
 // Creates the maker for the customer's position
 _customerMarkerText = format ['Pick up customer %1', _name];
 _customerMarker = createMarkerLocal [_name, getPos _customer];
