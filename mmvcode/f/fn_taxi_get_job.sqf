@@ -1,15 +1,15 @@
-private ["_taxi_cab", "_me","_middle", "_mapCentre", "_group", "_road", "_position", "_random", "_name", "_customer", "_customerMarkerText", "_customerMarker", "_pick_up_task"];
+private ["_taxiCab", "_me", "_taxiCabName", "_middle", "_mapCentre", "_group", "_road", "_position", "_random", "_name", "_customer", "_customerMarkerText", "_customerMarker", "_pickUpTask", "_taskDesc", "_trg"];
 
 _me = player;
-_taxi_cab_name = format ["taxi_%1", _me];
-_taxi_cab = _this select 0;
-_taxi_cab setName _taxi_cab_name;
+_taxiCabName = format ["taxi_%1", _me];
+_taxiCab = _this select 0;
+_taxiCab setName _taxiCabName;
 
 // Center of the map
 _middle = worldSize/2; 
 _mapCentre = [_middle,_middle,0];
 
-player moveInDriver _taxi_cab;
+player moveInDriver _taxiCab;
 // Group for the spawned AI
 _group = createGroup civilian;	
 
@@ -39,22 +39,31 @@ _customerMarkerText = format ['Pick up customer %1', _name];
 _customerMarker = createMarkerLocal [_name, getPos _customer];
 
 // Use the Tasks module to mark the position
-_pick_up_task = player createSimpleTask [_customerMarkerText];
-_task_desc = format ["Pick up the customer from the marked location (%1)",_position];
-_pick_up_task setSimpleTaskDescription [_task_desc, _customerMarkerText, ""];
-_pick_up_task setTaskState "Assigned";
-_pick_up_task setSimpleTaskDestination (getMarkerPos _customerMarker);
+_pickUpTask = player createSimpleTask [_customerMarkerText];
+_taskDesc = format ["Pick up the customer from the marked location (%1)",_position];
+_pickUpTask setSimpleTaskDescription [_taskDesc, _customerMarkerText, ""];
+_pickUpTask setTaskState "Assigned";
+_pickUpTask setSimpleTaskDestination (getMarkerPos _customerMarker);
 
-player setCurrentTask _pick_up_task;
-["TaskAssigned",[_task_desc]] call bis_fnc_showNotification;
+// Assign the task to player
+player setCurrentTask _pickUpTask;
+["TaskAssigned",[_taskDesc]] call bis_fnc_showNotification;
 
+// Trigger for the pick up zone
 _trg = createTrigger ["EmptyDetector", getPos _customer];
 _trg setTriggerArea [5, 5, 0, false];
 _trg setTriggerActivation ["CIV", "PRESENT", false];
 _trg setTriggerStatements ["(vehicle player) in thisList",  "hint 'civilian near'", "hint 'no civilian near'"];
 
+// Wait until the player enters the trigger
 waitUntil {triggerActivated _trg};
-_customer moveInAny _taxi_cab;
-_pick_up_task setTaskState "Succeeded";
+
+// Get customer in the car
+_customer moveInAny _taxiCab;
+
+// Complete the task and notify player
+_pickUpTask setTaskState "Succeeded";
 ["TaskSucceeded",["Pick up the customer."]] call bis_fnc_showNotification;
-[player, _taxi_cab, _customer, _pick_up_task] spawn mmvcode_fnc_taxi_drive_to_location;
+
+// Next step, go to destination
+[player, _taxiCab, _customer, _pickUpTask] spawn mmvcode_fnc_taxi_drive_to_location;
